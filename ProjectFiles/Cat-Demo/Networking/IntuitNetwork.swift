@@ -23,7 +23,7 @@ class Network {
     class func fetchCatBreeds(completion: @escaping (Swift.Result<[CatBreed], Error>) -> Void) {
         
         /// Create the URL for the request
-        guard let url = URL(string: "https://api.thecatapi.com/v1/breeds?limit=10&page=0") else {
+        guard let url = URL(string: "https://api.thecatapi.com/v1/breeds") else {
             let error = NSError(domain: "Network.fetchCats", code: NetworkError.badUrl.rawValue, userInfo: nil)
             return completion(Result.failure(error))
         }
