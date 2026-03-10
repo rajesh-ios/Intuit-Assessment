@@ -25,11 +25,10 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "catBreed") else {
-            return UITableViewCell()
-        }
+        let cell = tableView.dequeueReusableCell(withIdentifier: "catBreed", for: indexPath)
         
         cell.textLabel?.text = viewModel.catBreeds?[indexPath.row].name
+        cell.detailTextLabel?.text = viewModel.catBreeds?[indexPath.row].description
         
         return cell
     }
