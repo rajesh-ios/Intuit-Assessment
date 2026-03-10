@@ -2,21 +2,11 @@
 import Foundation
 import Combine
 
-/// Basic Delegate interface to send messages
-protocol CatDataDelegate {
-    func breedsChangedNotification()
-}
-
 /// View model
 class ViewModel: ObservableObject {
-    var catDataDelegate: CatDataDelegate?
     
     /// Array of all cat breeds
-    @Published var catBreeds: [CatBreed] = [] {
-        didSet {
-            self.catDataDelegate?.breedsChangedNotification()
-        }
-    }
+    @Published var catBreeds: [CatBreed] = []
     
     @Published var searchText: String = ""
     

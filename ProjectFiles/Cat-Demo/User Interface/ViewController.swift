@@ -16,20 +16,24 @@ class ViewController: UIViewController {
         self.tableView.dataSource = self
         self.tableView.delegate = self
         
-        self.viewModel.catDataDelegate = self
         self.viewModel.getBreeds()
         
         setupSearchBar()
-        observeSearchText()
+        observeSearchBarANDCatBreeds()
     }
     
-    private func observeSearchText() {
-        viewModel.$searchText
-            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.tableView.reloadData()
-            }
-            .store(in: &cancellables)
+    private func observeSearchBarANDCatBreeds() {
+        // Combine both catBreeds and searchText into a single subscription
+        Publishers.CombineLatest(
+            viewModel.$catBreeds,
+            viewModel.$searchText
+                .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in
+            self?.tableView.reloadData()
+        }
+        .store(in: &cancellables)
     }
     
     private func setupSearchBar() {
@@ -93,12 +97,3 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
     }
 }
 
-// MARK: -
-// MARK: Cat Data Model Delegate Methods
-extension ViewController: CatDataDelegate {
-    func breedsChangedNotification() {
-        DispatchQueue.main.async {
-            self.tableView.reloadData()
-        }
-    }
-}
