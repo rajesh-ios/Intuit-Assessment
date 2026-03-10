@@ -1,5 +1,6 @@
 // Copyright © 2021 Intuit, Inc. All rights reserved.
 import UIKit
+import SwiftUI
 
 class ViewController: UIViewController {
     @IBOutlet var tableView: UITableView!
@@ -35,11 +36,17 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)  {
         guard let cat = viewModel.catBreeds?[indexPath.row],
-              let catId = cat.id else {
+              let _ = cat.id else {
             return
         }
         
-        viewModel.getCatImage(breedId: catId)
+        let detailView = CatBreedDetailView(breed: cat)
+        
+        let hostingController = UIHostingController(rootView: detailView)
+        
+        if let navController = navigationController {
+            navController.pushViewController(hostingController, animated: true)
+        }
     }
 }
 
