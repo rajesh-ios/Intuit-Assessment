@@ -73,21 +73,23 @@ class ViewController: UIViewController {
 // MARK: TableView Delegate Methods
 extension ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.filteredBreeds.count
+        return viewModel.filteredBreeds?.count ?? 0
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "catBreed", for: indexPath)
         
-        cell.textLabel?.text = viewModel.filteredBreeds[indexPath.row].name
-        cell.detailTextLabel?.text = viewModel.filteredBreeds[indexPath.row].description
+        cell.textLabel?.text = viewModel.filteredBreeds?[indexPath.row].name
+        cell.detailTextLabel?.text = viewModel.filteredBreeds?[indexPath.row].description
         
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)  {
         
-        let detailView = CatBreedDetailView(breed: viewModel.filteredBreeds[indexPath.row])
+        guard let breed = viewModel.filteredBreeds?[indexPath.row] else { return }
+        
+        let detailView = CatBreedDetailView(breed: breed)
         
         let hostingController = UIHostingController(rootView: detailView)
         

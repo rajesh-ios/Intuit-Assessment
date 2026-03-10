@@ -17,8 +17,6 @@ struct SearchBarView: View {
             
             TextField("Search breeds", text: $searchText)
         }
-        .padding(8)
-        .padding(.horizontal)
-        .padding(.vertical, 8)
+        .padding(.all, 8)
     }
 }

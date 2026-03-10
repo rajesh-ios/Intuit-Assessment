@@ -6,16 +6,16 @@ import Combine
 class ViewModel: ObservableObject {
     
     /// Array of all cat breeds
-    @Published var catBreeds: [CatBreed] = []
+    @Published var catBreeds: [CatBreed]? = nil
     
     @Published var searchText: String = ""
     
     /// Computed property that returns filtered breeds based on search text
-    var filteredBreeds: [CatBreed] {
+    var filteredBreeds: [CatBreed]? {
         if searchText.isEmpty {
             return catBreeds
         } else {
-            return catBreeds.filter { breed in
+            return catBreeds?.filter { breed in
                 breed.name?.lowercased().contains(searchText.lowercased()) ?? false
             }
         }
@@ -29,7 +29,7 @@ class ViewModel: ObservableObject {
             case .success(let breeds):
                 self.catBreeds = breeds
             case .failure(let error):
-                self.catBreeds = []
+                self.catBreeds = nil
                 print(error)
             }
         }
