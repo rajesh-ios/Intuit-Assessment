@@ -1,11 +1,14 @@
 // Copyright © 2021 Intuit, Inc. All rights reserved.
 import UIKit
 import SwiftUI
+import Combine
 
 class ViewController: UIViewController {
     @IBOutlet var tableView: UITableView!
+    private var searchBarHostingController: UIHostingController<SearchBarView>?
     
     let viewModel = ViewModel()
+    private var cancellables = Set<AnyCancellable>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -15,6 +18,50 @@ class ViewController: UIViewController {
         
         self.viewModel.catDataDelegate = self
         self.viewModel.getBreeds()
+        
+        setupSearchBar()
+        observeSearchText()
+    }
+    
+    private func observeSearchText() {
+        viewModel.$searchText
+            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadData()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func setupSearchBar() {
+
+        let searchBarView = SearchBarView(
+            searchText: Binding(
+                get: { self.viewModel.searchText },
+                set: { newValue in
+                    self.viewModel.searchText = newValue
+                }
+            )
+        )
+        
+        let hostingController = UIHostingController(rootView: searchBarView)
+        hostingController.view.backgroundColor = .clear
+        
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.didMove(toParent: self)
+        
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingController.view.heightAnchor.constraint(equalToConstant: 60)
+        ])
+        
+        tableView.contentInset = UIEdgeInsets(top: 60, left: 0, bottom: 0, right: 0)
+        tableView.scrollIndicatorInsets = tableView.contentInset
+        
+        self.searchBarHostingController = hostingController
     }
 }
 
@@ -22,25 +69,21 @@ class ViewController: UIViewController {
 // MARK: TableView Delegate Methods
 extension ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.catBreeds?.count ?? 0
+        return viewModel.filteredBreeds.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "catBreed", for: indexPath)
         
-        cell.textLabel?.text = viewModel.catBreeds?[indexPath.row].name
-        cell.detailTextLabel?.text = viewModel.catBreeds?[indexPath.row].description
+        cell.textLabel?.text = viewModel.filteredBreeds[indexPath.row].name
+        cell.detailTextLabel?.text = viewModel.filteredBreeds[indexPath.row].description
         
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)  {
-        guard let cat = viewModel.catBreeds?[indexPath.row],
-              let _ = cat.id else {
-            return
-        }
         
-        let detailView = CatBreedDetailView(breed: cat)
+        let detailView = CatBreedDetailView(breed: viewModel.filteredBreeds[indexPath.row])
         
         let hostingController = UIHostingController(rootView: detailView)
         
@@ -56,37 +99,6 @@ extension ViewController: CatDataDelegate {
     func breedsChangedNotification() {
         DispatchQueue.main.async {
             self.tableView.reloadData()
-        }
-    }
-    
-    func imageChangedNotification() {
-        DispatchQueue.main.async {
-            guard let row = self.tableView.indexPathForSelectedRow?.row else {
-                return
-            }
-            
-            guard let cat = self.viewModel.catBreeds?[row] else {
-                return
-            }
-            
-            let alert = UIAlertController(title: cat.name, message: nil, preferredStyle: .alert)
-            let imageView = UIImageView(frame: CGRect(x: 10.0, y: 50.0, width: 225, height: 225))
-            imageView.contentMode = .scaleAspectFit
-            imageView.image = self.viewModel.catImage
-            
-            alert.view.addSubview(imageView)
-            
-            let height = NSLayoutConstraint(item: alert.view!, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 320)
-            let width = NSLayoutConstraint(item: alert.view!, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 250)
-            
-            alert.view.addConstraint(height)
-            alert.view.addConstraint(width)
-            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { (action) in
-                alert.dismiss(animated: true, completion: nil)
-                self.tableView.reloadData()
-            }))
-            
-            self.present(alert, animated: true, completion: nil)
         }
     }
 }
