@@ -2,7 +2,7 @@
 import Foundation
 
 /// Data Model for network response
-struct CatBreed: Decodable {
+struct CatBreed: Decodable, Equatable {
     /// internal ID
     let id: String?
     
@@ -44,7 +44,7 @@ struct CatBreed: Decodable {
     let stranger_friendly: Int?
     let vocalisation: Int?
     
-    struct CatImage: Decodable {
+    struct CatImage: Decodable, Equatable {
         let id: String?             // "k71ULYfRr"
         let width: Int?             // 2048
         let height: Int?            // 1554
@@ -55,10 +55,10 @@ struct CatBreed: Decodable {
     let image: CatImage?
 }
 
-struct CatDetails: Decodable {
+struct CatDetails: Decodable, Equatable {
     let breeds: [CatBreedDetails]?
     
-    struct CatBreedDetails: Decodable {
+    struct CatBreedDetails: Decodable, Equatable {
         let id: String?
         let name: String?
         let temperament: String?

@@ -3,11 +3,11 @@ import UIKit
 import SwiftUI
 import Combine
 
-class ViewController: UIViewController {
+final class ViewController: UIViewController {
     @IBOutlet var tableView: UITableView!
     private var searchBarHostingController: UIHostingController<SearchBarView>?
     
-    let viewModel = ViewModel()
+    private let viewModel = ViewModel()
     private var cancellables = Set<AnyCancellable>()
     
     override func viewDidLoad() {
@@ -19,21 +19,18 @@ class ViewController: UIViewController {
         self.viewModel.getBreeds()
         
         setupSearchBar()
-        observeSearchBarANDCatBreeds()
+        observeFilteredBreeds()
     }
     
-    private func observeSearchBarANDCatBreeds() {
-        // Combine both catBreeds and searchText into a single subscription
-        Publishers.CombineLatest(
-            viewModel.$catBreeds,
-            viewModel.$searchText
-                .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
-        )
-        .receive(on: DispatchQueue.main)
-        .sink { [weak self] _ in
-            self?.tableView.reloadData()
-        }
-        .store(in: &cancellables)
+    private func observeFilteredBreeds() {
+        viewModel.$filteredBreeds
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newValue in
+                guard let self else { return }
+                print("Reload")
+                self.tableView.reloadData()
+            }
+            .store(in: &cancellables)
     }
     
     private func setupSearchBar() {
@@ -73,21 +70,22 @@ class ViewController: UIViewController {
 // MARK: TableView Delegate Methods
 extension ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.filteredBreeds?.count ?? 0
+        return viewModel.filteredBreeds.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "catBreed", for: indexPath)
         
-        cell.textLabel?.text = viewModel.filteredBreeds?[indexPath.row].name
-        cell.detailTextLabel?.text = viewModel.filteredBreeds?[indexPath.row].description
+        let breed = viewModel.breed(at: indexPath.row)
+        cell.textLabel?.text = breed.name
+        cell.detailTextLabel?.text = breed.description
         
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)  {
         
-        guard let breed = viewModel.filteredBreeds?[indexPath.row] else { return }
+        let breed = viewModel.breed(at: indexPath.row)
         
         let detailView = CatBreedDetailView(breed: breed)
         

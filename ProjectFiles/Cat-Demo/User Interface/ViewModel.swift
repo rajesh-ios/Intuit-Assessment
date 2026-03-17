@@ -2,26 +2,38 @@
 import Foundation
 import Combine
 
-/// View model
-class ViewModel: ObservableObject {
-    
-    /// Array of all cat breeds
-    @Published var catBreeds: [CatBreed]? = nil
-    
+@MainActor
+final class ViewModel: ObservableObject {
+    // MARK: - Inputs
     @Published var searchText: String = ""
-    
-    /// Computed property that returns filtered breeds based on search text
-    var filteredBreeds: [CatBreed]? {
-        if searchText.isEmpty {
-            return catBreeds
-        } else {
-            return catBreeds?.filter { breed in
-                breed.name?.lowercased().contains(searchText.lowercased()) ?? false
-            }
+
+    // MARK: - Outputs
+    @Published private(set) var filteredBreeds: [CatBreed] = []
+
+    // MARK: - Private state
+    @Published private var catBreeds: [CatBreed] = []
+
+    init() {
+        
+        Publishers.CombineLatest(
+            $catBreeds,
+            $searchText
+                .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
+        )
+        .map { breeds, searchText -> [CatBreed] in
+            let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return breeds }
+            let q = trimmed.lowercased()
+            return breeds.filter { ($0.name ?? "").lowercased().contains(q) }
         }
+        .removeDuplicates()
+        .assign(to: &$filteredBreeds)
     }
-    
-    /// Get the breeds
+
+    func breed(at index: Int) -> CatBreed {
+        filteredBreeds[index]
+    }
+
     func getBreeds() {
         Network.fetchCatBreeds { (result) in
             switch result
@@ -29,7 +41,7 @@ class ViewModel: ObservableObject {
             case .success(let breeds):
                 self.catBreeds = breeds
             case .failure(let error):
-                self.catBreeds = nil
+                self.catBreeds = []
                 print(error)
             }
         }
